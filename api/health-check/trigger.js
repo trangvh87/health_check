@@ -6,8 +6,12 @@ module.exports = async (req, res) => {
   }
 
   try {
-    await runHealthCheck();
-    return res.status(200).json({ message: 'Health check triggered successfully' });
+    const summary = await runHealthCheck();
+    return res.status(200).json({
+      message: 'Health check triggered successfully',
+      successfulUrls: summary.successfulUrls,
+      total: summary.total
+    });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }

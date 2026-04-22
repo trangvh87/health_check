@@ -40,6 +40,7 @@ async function runHealthCheck() {
     const results = await Promise.all(healthCheckUrls.map(url => checkHealth(url.trim())));
 
     const failedChecks = results.filter(result => result.status === 'FAILED');
+    const successfulChecks = results.filter(result => result.status === 'OK');
 
     if (failedChecks.length > 0) {
         const message = `⚠️ *Health Check Failed*\n\n${failedChecks.map(f => `❌ ${f.url}\nError: ${f.error}`).join('\n\n')}`;
@@ -48,6 +49,12 @@ async function runHealthCheck() {
     } else {
         console.log('All health checks passed ✓');
     }
+
+    return {
+        successfulUrls: successfulChecks.map(result => result.url),
+        failedUrls: failedChecks.map(result => result.url),
+        total: results.length
+    };
 }
 
 console.log('Health check API ready. Use external scheduler (cron-job.org) to trigger endpoint.');
@@ -66,8 +73,12 @@ app.get('/', (req, res) => {
 // API endpoint to trigger health check manually
 app.post('/api/health-check/trigger', async (req, res) => {
     try {
-        await runHealthCheck();
-        res.status(200).json({ message: 'Health check triggered successfully' });
+        const summary = await runHealthCheck();
+        res.status(200).json({
+            message: 'Health check triggered successfully',
+            successfulUrls: summary.successfulUrls,
+            total: summary.total
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
