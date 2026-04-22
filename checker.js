@@ -33,7 +33,7 @@ async function sendTelegramNotification(message) {
     }
 }
 
-// Main health check job
+// Main health check job 
 async function runHealthCheck() {
     console.log(`[${new Date().toISOString()}] Running health check...`);
 
