@@ -43,7 +43,8 @@ async function runHealthCheck() {
     const successfulChecks = results.filter(result => result.status === 'OK');
 
     if (failedChecks.length > 0) {
-        const message = `⚠️ *Health Check Failed*\n\n${failedChecks.map(f => `❌ ${f.url}\nError: ${f.error}\nTime: ${f.occurredAt || new Date().toISOString()}`).join('\n\n')}`;
+        const vietnamTime = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+        const message = `⚠️ *Health Check Failed*\n\n${failedChecks.map(f => `❌ ${f.url}\nError: ${f.error}\nTime: ${f.occurredAt ? new Date(f.occurredAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : vietnamTime}`).join('\n\n')}`;
         await sendTelegramNotification(message);
         console.error('Failed checks:', failedChecks);
     } else {
