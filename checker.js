@@ -3,7 +3,8 @@ const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
 
 // Initialize Telegram Bot
-const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN);
+const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
+const bot = telegramBotToken ? new TelegramBot(telegramBotToken) : null;
 const telegramChatId = process.env.TELEGRAM_CHAT_ID;
 
 // Parse URLs from environment variable
@@ -22,6 +23,10 @@ async function checkHealth(url) {
 // Send Telegram notification
 async function sendTelegramNotification(message) {
     try {
+        if (!bot || !telegramChatId) {
+            console.warn('Telegram notification skipped: missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID');
+            return;
+        }
         await bot.sendMessage(telegramChatId, message);
     } catch (error) {
         console.error('Failed to send Telegram notification:', error.message);
@@ -46,11 +51,17 @@ async function runHealthCheck() {
 }
 
 console.log('Health check API ready. Use external scheduler (cron-job.org) to trigger endpoint.');
-
-module.exports = { runHealthCheck };
 const app = express();
 
 app.use(express.json());
+
+app.get('/', (req, res) => {
+    res.status(200).json({
+        message: 'Health check API is running',
+        triggerEndpoint: '/api/health-check/trigger',
+        statusEndpoint: '/api/health-check/status'
+    });
+});
 
 // API endpoint to trigger health check manually
 app.post('/api/health-check/trigger', async (req, res) => {
@@ -71,7 +82,12 @@ app.get('/api/health-check/status', (req, res) => {
     });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Health check API server running on port ${PORT}`);
-});
+if (require.main === module) {
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => {
+        console.log(`Health check API server running on port ${PORT}`);
+    });
+}
+
+module.exports = app;
+module.exports.runHealthCheck = runHealthCheck;
